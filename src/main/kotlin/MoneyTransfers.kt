@@ -1,5 +1,5 @@
 fun main() {
-    var resultCommission = calculateCommission("Mastercard", 0.0, 14_001.0)
+    var resultCommission = calculateCommission("VK Pay", 40_001.0, 1_000.0)
     when(resultCommission){
         -1.0 -> println("Превышен суточный лимит!")
         -2.0 -> println("Превышен месячный лимит!")
@@ -21,19 +21,18 @@ fun calculateCommission(cardType: String = "Мир", monthlyTransfers: Double = 
     val dailyLimitExceeded = -1.0 // Превышен суточный лимит!
     val monthlyLimitExceeded = -2.0 // Превышен месячный лимит!
     val unknownCardType = -3.0 // Неизвестный тип карты!
-    val rangeNonCommission = mastercardMinLimit..mastercardMaxLimit
+    val rangeNonCommission = mastercardMinLimit..mastercardMaxLimit // Значения минимального и максимального платежа,
+                                                                          // когда не берется комиссия для Mastercard и Maestro
 
     // Проверка лимитов
-    if ((transferAmount > dailyCardLimit) ||
-        (transferAmount > dailyVKPayLimit))
-    {
-        return dailyLimitExceeded
+    if(cardType == "VK Pay") {
+        if (transferAmount > dailyVKPayLimit) return dailyLimitExceeded
+        if (monthlyTransfers + transferAmount > monthlyVKPayLimit) return monthlyLimitExceeded
     }
-        if ((monthlyTransfers + transferAmount > monthlyCardLimit) ||
-            (monthlyTransfers + transferAmount > monthlyVKPayLimit))
-    {
-        return monthlyLimitExceeded
-    }
+
+    if (transferAmount > dailyCardLimit) return dailyLimitExceeded
+
+    if (monthlyTransfers + transferAmount > monthlyCardLimit) return monthlyLimitExceeded
 
     // Расчет комиссии
     return when (cardType) {
@@ -46,7 +45,7 @@ fun calculateCommission(cardType: String = "Мир", monthlyTransfers: Double = 
             {
                 val commission = if (monthlyTransfers > monthlyCardLimit) { transferAmount * 0.006 + 20 }
                 else if (monthlyTransfers + transferAmount > monthlyCardLimit) { ((monthlyTransfers + transferAmount) - monthlyCardLimit) * 0.006 + 20 }
-                else TODO() // 0.6% + 20 руб
+                else nonCommission // 0.6% + 20 руб
                 commission
             }
         }
