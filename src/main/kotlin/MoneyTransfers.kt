@@ -1,5 +1,5 @@
 fun main() {
-    var resultCommission = calculateCommission("Visa", 0.0, 150_000.0)
+    var resultCommission = calculateCommission("Mastercard", 0.0, 14_001.0)
     when(resultCommission){
         -1.0 -> println("Превышен суточный лимит!")
         -2.0 -> println("Превышен месячный лимит!")
@@ -9,37 +9,59 @@ fun main() {
 }
 
 fun calculateCommission(cardType: String = "Мир", monthlyTransfers: Double = 0.0, transferAmount: Double): Double {
-    val dailyLimit = 150_000.0 // Максимум в сутки
-    val monthlyLimit = 600_000.0 // Максимум в месяц
-    val mastercardLimit = 75_000.0 // Лимит для Mastercard
+    val dailyCardLimit = 150_000.0 // Максимум по карте в сутки
+    val monthlyCardLimit = 600_000.0 // Максимум по карте в месяц
+    val dailyVKPayLimit = 15_000 // Максимум с VKPay в сутки
+    val monthlyVKPayLimit = 40_000 // Максимум с VKPay в месяц
+    val mastercardMaxLimit = 75_000.0 // Максимальный лимит для Mastercard и Maestro
+    val mastercardMinLimit = 300.0 // Минимальный лимит для Mastercard и Maestro
+    val visaMinCommission = 35.0 // Минимальная комиссия для Visa и Мир
+    val visaCommission = 0.0075 // Комиссия для Visa и Мир
+    val nonCommission = 0.0 // Комиссия не взимается
+    val dailyLimitExceeded = -1.0 // Превышен суточный лимит!
+    val monthlyLimitExceeded = -2.0 // Превышен месячный лимит!
+    val unknownCardType = -3.0 // Неизвестный тип карты!
+    val rangeNonCommission = mastercardMinLimit..mastercardMaxLimit
 
     // Проверка лимитов
-    if (transferAmount > dailyLimit) {
-        return -1.0
+    if ((transferAmount > dailyCardLimit) ||
+        (transferAmount > dailyVKPayLimit))
+    {
+        return dailyLimitExceeded
     }
-    if (monthlyTransfers + transferAmount > monthlyLimit) {
-        return -2.0
+        if ((monthlyTransfers + transferAmount > monthlyCardLimit) ||
+            (monthlyTransfers + transferAmount > monthlyVKPayLimit))
+    {
+        return monthlyLimitExceeded
     }
 
     // Расчет комиссии
     return when (cardType) {
-        "Mastercard" -> {
-            if (monthlyTransfers + transferAmount <= mastercardLimit) {
-                0.0 // Комиссия не взимается
-            } else {
-                val commission = transferAmount * 0.006 + 20 // 0.6% + 20 руб
+        "Mastercard", "Maestro" ->
+            {
+                if (monthlyTransfers + transferAmount in rangeNonCommission) {
+                nonCommission // Комиссия не взимается
+            }
+                else
+            {
+                val commission = if (monthlyTransfers > monthlyCardLimit) { transferAmount * 0.006 + 20 }
+                else if (monthlyTransfers + transferAmount > monthlyCardLimit) { ((monthlyTransfers + transferAmount) - monthlyCardLimit) * 0.006 + 20 }
+                else TODO() // 0.6% + 20 руб
                 commission
             }
         }
-        "Visa" -> {
-            val commission = transferAmount * 0.0075
-            if (commission < 35) {
-                35.0 // Минимальная комиссия
-            } else {
+        "Visa", "Мир" ->
+            {
+                val commission = transferAmount * visaCommission
+                if (commission < visaMinCommission) {
+                    visaMinCommission // Минимальная комиссия
+            }
+                else
+            {
                 commission
             }
         }
-        "Мир" -> 0.0 // Комиссия не взимается
-        else -> -3.0
+        "VK Pay" -> nonCommission // Комиссия не взимается
+        else -> unknownCardType
     }
 }
