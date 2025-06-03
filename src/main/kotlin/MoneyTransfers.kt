@@ -1,4 +1,4 @@
-fun ain() {
+fun main() {
     var resultCommission = calculateCommission("VK Pay", 40_001.0, 1_000.0)
     when(resultCommission){
         -1.0 -> println("Превышен суточный лимит!")
