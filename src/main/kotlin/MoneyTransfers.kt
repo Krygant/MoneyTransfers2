@@ -40,24 +40,15 @@ fun calculateCommission(cardType: String = "Мир",
     // Расчет комиссии
     return when (cardType) {
         "Mastercard", "Maestro" -> {
-            var commission: Double
-            if (monthlyTransfers + transferAmount in rangeNonCommission) {
-                nonCommission // Комиссия не взимается
-            }else if (transferAmount !in rangeNonCommission) {
-                commission = transferAmount * 0.006 + 20// 0.6% + 20 руб
-                commission
-            } else {
-                nonCommission // Просто для работы кода
-            }
+            var commission = if (monthlyTransfers + transferAmount in rangeNonCommission) nonCommission else transferAmount * 0.006 + 20// 0.6% + 20 руб
+            commission
         }
 
-        "Visa", "Мир" ->
-            {
-                val commission = transferAmount * visaCommission
-                if (commission < visaMinCommission) {
-                    visaMinCommission // Минимальная комиссия
-            }
-                else
+        "Visa", "Мир" -> {
+            val commission = transferAmount * visaCommission
+            if (commission < visaMinCommission) {
+                visaMinCommission // Минимальная комиссия
+            } else
             {
                 commission
             }
@@ -65,5 +56,5 @@ fun calculateCommission(cardType: String = "Мир",
 
         "VK Pay" -> nonCommission // Комиссия не взимается
         else -> unknownCardType
-    }
+    } as Double
 }
