@@ -8,7 +8,10 @@ fun main() {
     }
 }
 
-fun calculateCommission(cardType: String = "Мир", monthlyTransfers: Double = 0.0, transferAmount: Double): Double {
+fun calculateCommission(cardType: String = "Мир",
+                        monthlyTransfers: Double = 0.0,
+                        transferAmount: Double): Double
+{
     val dailyCardLimit = 150_000.0 // Максимум по карте в сутки
     val monthlyCardLimit = 600_000.0 // Максимум по карте в месяц
     val dailyVKPayLimit = 15_000 // Максимум с VKPay в сутки
@@ -30,25 +33,24 @@ fun calculateCommission(cardType: String = "Мир", monthlyTransfers: Double = 
         if (monthlyTransfers + transferAmount > monthlyVKPayLimit) return monthlyLimitExceeded
     }
 
-    if (transferAmount > dailyCardLimit) return dailyLimitExceeded
-
-    if (monthlyTransfers + transferAmount > monthlyCardLimit) return monthlyLimitExceeded
-
+    if(cardType !== "VK Pay") {
+        if (transferAmount > dailyCardLimit) return dailyLimitExceeded
+        if (monthlyTransfers + transferAmount > monthlyCardLimit) return monthlyLimitExceeded
+    }
     // Расчет комиссии
     return when (cardType) {
-        "Mastercard", "Maestro" ->
-            {
-                if (monthlyTransfers + transferAmount in rangeNonCommission) {
+        "Mastercard", "Maestro" -> {
+            var commission: Double
+            if (monthlyTransfers + transferAmount in rangeNonCommission) {
                 nonCommission // Комиссия не взимается
-            }
-                else
-            {
-                val commission = if (monthlyTransfers > monthlyCardLimit) { transferAmount * 0.006 + 20 }
-                else if (monthlyTransfers + transferAmount > monthlyCardLimit) { ((monthlyTransfers + transferAmount) - monthlyCardLimit) * 0.006 + 20 }
-                else nonCommission // 0.6% + 20 руб
+            }else if (transferAmount !in rangeNonCommission) {
+                commission = transferAmount * 0.006 + 20// 0.6% + 20 руб
                 commission
+            } else {
+                nonCommission // Просто для работы кода
             }
         }
+
         "Visa", "Мир" ->
             {
                 val commission = transferAmount * visaCommission
@@ -60,6 +62,7 @@ fun calculateCommission(cardType: String = "Мир", monthlyTransfers: Double = 
                 commission
             }
         }
+
         "VK Pay" -> nonCommission // Комиссия не взимается
         else -> unknownCardType
     }
